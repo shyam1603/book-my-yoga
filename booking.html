@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Session - Book My Yoga</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Work+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="assets/logo1.png" alt="Book My Yoga">
+                <span>Book My Yoga</span>
+            </div>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="#" class="btn-logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="booking-container">
+        <div class="booking-header">
+            <h1>Book Your Yoga Session</h1>
+            <p>Select your preferred date, time, and yoga style</p>
+        </div>
+
+        <form action="backend/book_session.php" method="POST" class="booking-form">
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="time">Time</label>
+                <select id="time" name="time" required>
+                    <option value="">Select a time</option>
+                    <option value="morning">Morning (8:00 AM - 10:00 AM)</option>
+                    <option value="afternoon">Afternoon (12:00 PM - 2:00 PM)</option>
+                    <option value="evening">Evening (5:00 PM - 7:00 PM)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="yoga_type">Yoga Type</label>
+                <select id="yoga_type" name="yoga_type" required>
+                    <option value="">Select a yoga type</option>
+                    <option value="hatha">Hatha Yoga</option>
+                    <option value="vinyasa">Vinyasa Flow</option>
+                    <option value="yin">Yin Yoga</option>
+                    <option value="ashtanga">Ashtanga Yoga</option>
+                    <option value="restorative">Restorative Yoga</option>
+                    <option value="prenatal">Prenatal Yoga</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="instructor">Instructor</label>
+                <select id="instructor" name="instructor" required>
+                    <option value="">Select an instructor</option>
+                    <option value="Atanu pathak">atanu pathak</option>
+                    <option value="michael">Michael Chen</option>
+                    <option value="priya">Priya Patel</option>
+                    <option value="david">David Wilson</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="notes">Special Requests</label>
+                <textarea id="notes" name="notes" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn-book">Confirm Booking</button>
+        </form>
+    </main>
+
+    <footer class="booking-footer">
+        <p>&copy; 2023 Book My Yoga. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Book My Yoga</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Work+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="assets/logo1.png" alt="Yoga Icon">
+                <h2>Create Account</h2>
+                <p>Join our yoga community today</p>
+                <script>
+                    // Check for error messages in URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const error = urlParams.get('error');
+                    if (error) {
+                        let errorMessage = '';
+                        switch(error) {
+                            case 'emptyfields':
+                                errorMessage = 'Please fill in all fields.';
+                                break;
+                            case 'passwordmismatch':
+                                errorMessage = 'Passwords do not match.';
+                                break;
+                            case 'emailtaken':
+                                errorMessage = 'Email is already registered.';
+                                break;
+                            case 'sqlerror':
+                                errorMessage = 'There was an error creating your account.';
+                                break;
+                            default:
+                                errorMessage = 'An error occurred.';
+                        }
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.textContent = errorMessage;
+                        document.querySelector('.auth-header').appendChild(errorDiv);
+                    }
+                </script>
+            </div>
+            <form action="backend/signup.php" method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+                <button type="submit" class="btn-auth">Sign Up</button>
+            </form>
+            <div class="auth-footer">
+                <p>Already have an account? <a href="login.html">Login</a></p>
+                <a href="index.html" class="back-home"><i class="fas fa-arrow-left"></i> Back to home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
