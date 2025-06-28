@@ -1,0 +1,14 @@
+
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+.env*
+
+.venv
+
+**__pycache__/
