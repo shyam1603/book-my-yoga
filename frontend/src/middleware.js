@@ -1,5 +1,20 @@
-export { default } from "next-auth/middleware";
+import { withAuth } from "next-auth/middleware"
+
+export default withAuth(
+  function middleware(req) {
+    // Add any additional middleware logic here
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token
+    },
+  }
+)
 
 export const config = {
-    matcher: ["/((?!sign-in|sign-up|$).*)"],
-};
+  matcher: [
+    "/dashboard/:path*",
+    "/booking/:path*",
+    "/(protected)/:path*"
+  ]
+}

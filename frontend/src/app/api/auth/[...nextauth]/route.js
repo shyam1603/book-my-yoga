@@ -1,98 +1,69 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import axios from "axios";
-
-const api_key = process.env.NEXT_PUBLIC_API;
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
 
 const handler = NextAuth({
-    providers: [
-        CredentialsProvider({
-            name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" },
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
             },
-            async authorize(credentials, req) {
-                if (!credentials?.email || !credentials?.password) {
-                    console.log("Missing credentials");
-                    return null;
-                }
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          })
 
-                try {
-                    const response = await axios.post(`${api_key}/auth/login`, {
-                        email: credentials.email,
-                        password: credentials.password,
-                    });
+          const data = await res.json()
 
-                    const authData = response.data;
-
-                    if (!authData?.access_token || !authData?.user) {
-                        console.error("Missing fields in auth response");
-                        return null;
-                    }
-
-                    return {
-                        id: authData.user?.id || "",
-                        email: authData.user.email,
-                        name: authData.user.name,
-                        accessToken: authData.access_token,
-                        refreshToken: authData.refresh_token || null,
-                    };
-                } catch (error) {
-                    console.error(
-                        "Auth error:",
-                        error?.response?.data || error.message,
-                    );
-                    return null;
-                }
-            },
-        }),
-    ],
-    pages: {
-        signIn: "/sign-in",
-        signOut: "/",
-        error: "/sign-in",
-    },
-    callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
-                token.email = user.email;
-                token.name = user.name;
-                token.accessToken = user.accessToken;
-                token.refreshToken = user.refreshToken || null;
+          if (res.ok && data.user) {
+            return {
+              id: data.user.id,
+              name: data.user.name,
+              email: data.user.email,
+              accessToken: data.access_token,
+              refreshToken: data.refresh_token,
             }
-            return token;
-        },
-        async session({ session, token }) {
-            if (token) {
-                session.user = {
-                    email: token.email,
-                    name: token.name,
-                    accessToken: token.accessToken,
-                    refreshToken: token.refreshToken || null,
-                };
-            }
-            return session;
-        },
+          }
+          return null
+        } catch (error) {
+          console.error('Auth error:', error)
+          return null
+        }
+      }
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.accessToken = user.accessToken
+        token.refreshToken = user.refreshToken
+        token.id = user.id
+      }
+      return token
     },
-    session: {
-        strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60,
-        updateAge: 24 * 60 * 60, 
+    async session({ session, token }) {
+      session.accessToken = token.accessToken
+      session.refreshToken = token.refreshToken
+      session.user.id = token.id
+      return session
     },
-    cookies: {
-        sessionToken: {
-            name: `next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-    },
-    secret: process.env.NEXTAUTH_SECRET,
-    debug: process.env.NODE_ENV === "development",
-});
+  },
+  pages: {
+    signIn: '/sign-in',
+    signUp: '/sign-up',
+  },
+  session: {
+    strategy: "jwt",
+  },
+})
 
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST }
