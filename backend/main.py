@@ -1,17 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from middleware.middleware import AuthMiddleware
-from routes import auth, yogo
+from middleware.middleware import JWTAuthMiddleware
+from routes import index
 import uvicorn
 
 load_dotenv()
 app = FastAPI(
+    title="Book My Yoga API",
+    description="A comprehensive yoga booking platform API",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json"
 )
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(AuthMiddleware)
+app.add_middleware(JWTAuthMiddleware)
 
 @app.get("/")
 async def root():
@@ -32,14 +34,15 @@ async def protected_route(request: Request):
     """Example of a protected route that requires authentication"""
     return {
         "message": "This is a protected route",
-        "user_id": request.state.user_id,
-        "user_email": request.state.user_email,
-        "username": request.state.username
+        "respose": request.state.user,
+        # "user_id": request.state.user_id,
+        # "user_email": request.state.user_email,
+        # "username": request.state.username,
+        # "user_role": request.state.user_role
     }
 
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(yogo.router, prefix="/api", tags=["yoga"])
-
+# Include routers
+app.include_router(index.app, prefix="/api", tags=["Yoga Booking"])
 
 
 if __name__ == "__main__":

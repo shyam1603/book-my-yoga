@@ -1,70 +1,50 @@
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from fastapi.security import HTTPBearer
+from fnmatch import fnmatch
+from jose import JWTError
 from utils.auth import decode_token
 from models.models import User
-from database.db import AsyncSessionLocal
-import logging
+from database.db import DB 
+from sqlalchemy.future import select
 
-logger = logging.getLogger(__name__)
+PUBLIC_URLS = [
+    "/",                 
+    "/api/auth/**",          
+]
 
-class AuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app):
-        super().__init__(app)
-        self.public_paths = ["/", "/docs", "/openapi.json", "/auth/"]
+auth_scheme = HTTPBearer(auto_error=False)
 
+def is_public_path(path: str) -> bool:
+    return any(fnmatch(path, pattern) for pattern in PUBLIC_URLS)
+
+class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if any(path == pub or path.startswith(pub) for pub in self.public_paths):
+
+        if is_public_path(path):
             return await call_next(request)
 
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Authorization header missing or invalid"}
-            )
+        credentials = await auth_scheme(request)
+        if credentials is None:
+            return JSONResponse(status_code=401, content={"detail": "Authorization token missing"})
 
-        token = auth_header.split(" ")[1]
-        payload = decode_token(token)
-        if not payload:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid or expired token"}
-            )
+        token = credentials.credentials
+        try:
+            payload = decode_token(token)
+            email = payload.get("sub")
+            if not email:
+                return JSONResponse(status_code=401, content={"detail": "Invalid token payload"})
 
-        user_id = payload.get("user_id")
-        if not user_id:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid token payload"}
-            )
+            async with DB() as session:
+                result = await session.execute(select(User).where(User.email == email))
+                user = result.scalar_one_or_none()
+                if user is None:
+                    return JSONResponse(status_code=404, content={"detail": "User not found"})
 
-        async with AsyncSessionLocal() as db:
-            try:
-                result = await db.execute(
-                    User.__table__.select().where(User.id == user_id)
-                )
-                user_row = result.first()
-                if not user_row:
-                    return JSONResponse(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        content={"detail": "User not found"}
-                    )
-
-                user = user_row[0] if isinstance(user_row, tuple) else user_row
-
-                request.state.user_id = user.id
-                request.state.user_email = user.email
-                request.state.username = user.username
                 request.state.user = user
+        except JWTError:
+            return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
 
-            except Exception as e:
-                logger.error(f"Database error in auth middleware: {e}")
-                return JSONResponse(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    content={"detail": "Internal server error"}
-                )
-
-        response = await call_next(request)
-        return response
+        return await call_next(request)
