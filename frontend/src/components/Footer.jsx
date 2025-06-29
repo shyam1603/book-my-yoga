@@ -11,7 +11,7 @@ export default function Footer() {
             <div className="flex items-center space-x-3">
               <div className="relative w-10 h-10">
                 <Image 
-                  src="/assets/logo.png" 
+                  src="/logo.png" 
                   alt="Book My Yoga" 
                   fill
                   className="rounded-full object-cover"
