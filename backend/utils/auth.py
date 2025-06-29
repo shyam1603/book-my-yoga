@@ -21,19 +21,30 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "access"})
+    to_encode.update({
+        "exp": expire, 
+        "type": "access",
+        "sub": data.get("email")  # Add subject claim for middleware
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "refresh"})
+    to_encode.update({
+        "exp": expire, 
+        "type": "refresh",
+        "sub": data.get("email")  # Add subject claim
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_token(token: str):
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
     except jwt.ExpiredSignatureError:
-        return None
+        raise jwt.ExpiredSignatureError("Token has expired")
     except jwt.InvalidTokenError:
+        raise jwt.InvalidTokenError("Invalid token")
+    except Exception:
         return None

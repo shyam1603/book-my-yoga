@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models import schemas, models
@@ -33,13 +33,13 @@ async def signup(user: schemas.UserCreate, db: AsyncSession = DB):
     token = auth.create_access_token({
         "user_id": new_user.id,
         "email": new_user.email,
-        "role": new_user.role.value,
+        "role": new_user.role.value,  
         "username": new_user.name
     })
     refresh_token = auth.create_refresh_token({
         "user_id": new_user.id,
         "email": new_user.email,
-        "role": new_user.role.value,
+        "role": new_user.role.value, 
         "username": new_user.name
     })
     return {
@@ -59,13 +59,13 @@ async def login(user: schemas.UserLogin, db: AsyncSession = DB):
     token = auth.create_access_token({
         "user_id": db_user.id,
         "email": db_user.email,
-        "role": db_user.role.value,
+        "role": db_user.role.value,  
         "username": db_user.name
     })
     refresh_token = auth.create_refresh_token({
         "user_id": db_user.id,
         "email": db_user.email,
-        "role": db_user.role.value,
+        "role": db_user.role.value, 
         "username": db_user.name
     })
     return {
@@ -77,35 +77,37 @@ async def login(user: schemas.UserLogin, db: AsyncSession = DB):
 
 @router.post("/refresh", response_model=schemas.Token)
 async def refresh_token(refresh_token: str, db: AsyncSession = DB):
-    payload = auth.decode_token(refresh_token)
-    if not payload or payload.get("type") != "refresh":
+    try:
+        payload = auth.decode_token(refresh_token)
+        if not payload or payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+        
+        result = await db.execute(select(models.User).filter_by(id=user_id))
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        token = auth.create_access_token({
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role.value, 
+            "username": user.name
+        })
+        new_refresh_token = auth.create_refresh_token({
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role.value, 
+            "username": user.name
+        })
+        return {
+            "message": "Token refreshed successfully",
+            "access_token": token,
+            "refresh_token": new_refresh_token,
+            "user": user
+        }
+    except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
-    
-    user_id = payload.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
-    
-    # Get updated user info
-    result = await db.execute(select(models.User).filter_by(id=user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    token = auth.create_access_token({
-        "user_id": user.id,
-        "email": user.email,
-        "role": user.role.value,
-        "username": user.name
-    })
-    new_refresh_token = auth.create_refresh_token({
-        "user_id": user.id,
-        "email": user.email,
-        "role": user.role.value,
-        "username": user.name
-    })
-    return {
-        "message": "Token refreshed successfully",
-        "access_token": token,
-        "refresh_token": new_refresh_token,
-        "user": user
-    }

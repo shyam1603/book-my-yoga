@@ -34,16 +34,13 @@ async def protected_route(request: Request):
     """Example of a protected route that requires authentication"""
     return {
         "message": "This is a protected route",
-        "respose": request.state.user,
-        # "user_id": request.state.user_id,
-        # "user_email": request.state.user_email,
-        # "username": request.state.username,
-        # "user_role": request.state.user_role
+        "user_id": request.state.user_id,
+        "user_email": request.state.user_email,
+        "username": request.state.username,
+        "user_role": request.state.user_role
     }
 
-# Include routers
 app.include_router(index.app, prefix="/api", tags=["Yoga Booking"])
-
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
