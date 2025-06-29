@@ -9,19 +9,16 @@ router = APIRouter()
 
 @router.post("/signup", response_model=schemas.Token)
 async def signup(user: schemas.UserCreate, db: AsyncSession = DB):
-    result = await db.execute(select(models.User).filter_by(eamil=user.email))
-    existing_user = result.scalars().first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
+    
     result = await db.execute(select(models.User).filter_by(email=user.email))
     existing_email = result.scalars().first()
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already exists")
 
     new_user = models.User(
-        username=user.username,
+        name=user.name,
         email=user.email,
-        hashed_password=auth.hash_password(user.password)
+        password=auth.hash_password(user.password)
     )
     db.add(new_user)
     await db.commit()
@@ -35,27 +32,27 @@ async def signup(user: schemas.UserCreate, db: AsyncSession = DB):
         "refresh_token": refresh_token,
         "user" : {
             "id": new_user.id,
-            "username": new_user.username,
+            "name": new_user.name,
             "email": new_user.email,
         }
     }
 
-@router.post("/login", response_model=schemas.Token)
+@router.post("/login")
 async def login(user: schemas.UserLogin, db: AsyncSession = DB):
     result = await db.execute(select(models.User).filter_by(email=user.email))
     db_user = result.scalars().first()
-    if not db_user or not auth.verify_password(user.password, db_user.hashed_password):
+    if not db_user or not auth.verify_password(user.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = auth.create_access_token({"user_id": db_user.id})
-    refresh_token = auth.create_refresh_token({"user_id": db_user.id})
+    token = auth.create_access_token({"user_id": db_user.id, "email": db_user.email})
+    refresh_token = auth.create_refresh_token({"user_id": db_user.id, "email": db_user.email})
     return {
-        "message": "User created successfully",
+        "message": "Login successful",
         "access_token": token,
         "refresh_token": refresh_token,
         "user" : {
             "id": db_user.id,
-            "username": db_user.username,
+            "name": db_user.name,
             "email": db_user.email,
         }
     }

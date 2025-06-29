@@ -19,7 +19,7 @@ async def profile(db: AsyncSession = DB):
     
     return {
         "id": user.id,
-        "username": user.username,
+        "name": user.name,
         "email": user.email,
         "created_at": user.created_at,
         "updated_at": user.updated_at
